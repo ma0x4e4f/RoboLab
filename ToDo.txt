@@ -6,7 +6,7 @@ Considerations, Assumptions and conditions checks involved in the development:
 3. The priority for choosing the direction for exploration if more than two branches are available -> S(South) E(East) N(North) W(West)
 4. This consideration is about covering the border first before moving into the maze, there by getting an idea of the maze. The consideration states don't take a turn until their is no other direction but this also involves checking the previously visited nodes, so in covering the Border, the first double visit will happen in the origin or if we have a dead end around the boundary
 5. The whole array is reviewed before making a move or at least check for the possible four neighbouring nodes in the array. This check tells us whether we have to visit the node again or not
-6. Special case for the dead end -> TBD
+6. Special case for the dead end -> TBD (To Be Determined)
 7. Confused state: A state when we see we doesn't know what to do. In this state we have to review the whole array to find a node which still has an "unCoveredDirection" and if more than one node is available, then the robot has to decide in which order the robot has to arrive into those nodes
 
 Special things we discussed on 02.11.14
@@ -15,3 +15,7 @@ Special things we discussed on 02.11.14
 3. InitTask has to be present to reach the first node(origin) and to do HW init (motors (counts, degrees, etc), light sensors, etc) and SW init (initializing the variables, etc)
 4. "Matrix" representation in C language and to make use of area covering technique
 5. "Inertia" - Keep an eye on this and sometimes this will help in turning the robot
+
+Discussion on 04.11.2014
+1. Using Matrix rep. or 1-D array doesn't really affect anything
+2. we can add four pointer in our node struct, to point to its neighbouring nodes (which is actually a pointer to the element of the array)
