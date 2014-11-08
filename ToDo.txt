@@ -19,6 +19,6 @@ Special things we discussed on 02.11.14
 Discussion on 04.11.2014
 1. Using Matrix rep. or 1-D array doesn't really affect anything
 2. we can add four pointer in our node struct, to point to its neighbouring nodes (which is actually a pointer to the element of the array)
-3 For Next Discussion
+3. For Next Discussion
 3.1 Manoj: To create array and possibly finishing half of the algorithm
 3.2 Suse & Elena: Mae sure the limits of the sensor data (light and touch sensors)
