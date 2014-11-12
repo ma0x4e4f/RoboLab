@@ -22,3 +22,13 @@ Discussion on 04.11.2014
 3. For Next Discussion
 3.1 Manoj: To create array and possibly finishing half of the algorithm
 3.2 Suse & Elena: Mae sure the limits of the sensor data (light and touch sensors)
+
+Discussion 11.11.14
+1. Deadline for simulation: 18.11.2014
+2. Start of Merging and Testing Robot on the field: 18.11.2014
+3. Deadline for Complete Robot 02.12.2014
+4. Creating a perfect model of Intersection using Photo manipulation sw -> Elena
+5. Simulation open points
+5.1 Algo for dead ends 
+5.2 Algo for confused state
+6. Robot open points:
