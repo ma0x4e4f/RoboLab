@@ -80,7 +80,7 @@ node* searchMazeArray(int32 f_xCord_i32, int32 f_yCord_i32)
 {
 	node* mazeArrayElement_pst = NULL;
 
-	uint32 it = 0; // better to initialize here
+	uint32 it = 0;
 
 	for(; it < mazeArrayElements_ui32; it++)
 	{
@@ -118,3 +118,48 @@ node* searchMazeArray(int32 f_xCord_i32, int32 f_yCord_i32)
 	}
 }
 
+node* getLastUncoveredNode()
+{
+	node* mazeArrayElement_pst = NULL;
+
+	int32 uncoveredDirtections_i32 = 0x00;
+
+	uint32 it = 0;
+
+	if (0 < mazeArrayElements_ui32)
+	{
+		it = mazeArrayElements_ui32;
+
+		for (; it > 0; it--)
+		{
+			int32 arrayIndex_i32 = it - 1;
+
+			mazeArrayElement_pst = &mazeArray[arrayIndex_i32];
+			uncoveredDirtections_i32 = getUnCoveredDirections(mazeArrayElement_pst);
+
+			if(NULLDIRECTION != uncoveredDirtections_i32)
+			{
+				return mazeArrayElement_pst;
+			}
+			else
+			{
+				// do nothing
+				// check the next element
+			}
+		}
+	}
+	else
+	{
+		return NULL;
+	}
+
+	if ((NULL == mazeArrayElement_pst) || (0 == it))
+	{
+		return NULL;
+	}
+	else
+	{
+		// Intentionally left blank
+	}
+
+}

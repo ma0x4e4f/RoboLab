@@ -7,46 +7,12 @@
 
 #include "../h/Algo.h"
 
-directionsFlag getAvailableDirectionsFlag(node* f_inputNode_pst)
-{
-	directionsFlag directionsFlag_st;
+bool isMazeExplored_bl = false;
+static uint32 timeout_ui32 = 0;
+node* originNode_pst = NULL;
 
-	int32 availableDirections_i32 = getAvailableDirections(f_inputNode_pst);
-
-	directionsFlag_st.isNorthAvailable_bl =  (availableDirections_i32 & NORTH) == (NORTH);
-	directionsFlag_st.isSouthAvailable_bl =  (availableDirections_i32 & SOUTH) == (SOUTH);
-	directionsFlag_st.isWestAvailable_bl =  (availableDirections_i32 & WEST) == (WEST);
-	directionsFlag_st.isEastAvailable_bl =  (availableDirections_i32 & EAST) == (EAST);
-
-	return directionsFlag_st;
-}
-
-directionsFlag getUncoveredDirectionsFlag(node* f_inputNode_pst)
-{
-	directionsFlag directionsFlag_st;
-
-	int32 uncoveredDirections_i32 = getUnCoveredDirections(f_inputNode_pst);
-
-	directionsFlag_st.isNorthAvailable_bl =  (uncoveredDirections_i32 & NORTH) == (NORTH);
-	directionsFlag_st.isSouthAvailable_bl =  (uncoveredDirections_i32 & SOUTH) == (SOUTH);
-	directionsFlag_st.isWestAvailable_bl =  (uncoveredDirections_i32 & WEST) == (WEST);
-	directionsFlag_st.isEastAvailable_bl =  (uncoveredDirections_i32 & EAST) == (EAST);
-
-	return directionsFlag_st;
-}
-
-void checkToken(int32 f_moveResult_i32)
-{
-	if (ROBOT_TOKENFOUND == f_moveResult_i32)
-	{
-		tokenCount_i32++;
-
-		if (MAX_TOKENS == tokenCount_i32)
-		{
-			isTokensCollected_bl = true;
-		}
-	}
-}
+bool isTokensCollected_bl = false;
+int32 tokenCount_i32 = 0;
 
 bool initRobotAlgo()
 {
@@ -87,10 +53,17 @@ bool initRobotAlgo()
 
 }
 
-int32 robotAlgoMove(int32 f_moveCord_x_i32, int32 f_moveCord_y_i32)
+void checkToken(int32 f_moveResult_i32)
 {
-	printf("Moving to coordinate (%d,%d)\n", f_moveCord_x_i32, f_moveCord_y_i32);
-	return Robot_Move(f_moveCord_x_i32, f_moveCord_y_i32);
+	if (ROBOT_TOKENFOUND == f_moveResult_i32)
+	{
+		tokenCount_i32++;
+
+		if (MAX_TOKENS == tokenCount_i32)
+		{
+			isTokensCollected_bl = true;
+		}
+	}
 }
 
 int32 checkAndMoveWest(node* f_inputNode_pst)
@@ -102,7 +75,7 @@ int32 checkAndMoveWest(node* f_inputNode_pst)
 
 	nodeCord_st = getNodeCoordinates(f_inputNode_pst);
 	// Un-comment the below line if needed
-	directionsFlag uncoveredDirectionsFlag_st = getUncoveredDirectionsFlag(f_inputNode_pst);
+//	directionsFlag uncoveredDirectionsFlag_st = getUncoveredDirectionsFlag(f_inputNode_pst);
 
 	int32 moveCord_x_i32 = nodeCord_st.x_Coordinate_i32 - 1;
 	int32 moveCord_y_i32 = nodeCord_st.y_Coordinate_i32;
@@ -113,23 +86,25 @@ int32 checkAndMoveWest(node* f_inputNode_pst)
 	{
 		int32 unCoveredDirMoveNode_i32 = getUnCoveredDirections(moveNode_pst);
 
+		setWestNode(f_inputNode_pst, moveNode_pst);
+		setEastNode(moveNode_pst, f_inputNode_pst);
+
 		if (EAST == unCoveredDirMoveNode_i32)
 		{
-			setCoveredDirection(currentNode_pst, WEST);
+			setCoveredDirection(f_inputNode_pst, WEST);
 			setCoveredDirection(moveNode_pst, EAST);
 
-			// consideration No.7: call a specific function in the confused state (state where no
-			// valid uncovered direction available for current node
-			return ALGO_CONFUSED;
+			// As per design it should not come here
+			return CHECK_NOT_OK;
 		}
-		else // unCoveredDirMoveNode_i32 contains more than EAST
+		else if (NULLDIRECTION != unCoveredDirMoveNode_i32) // unCoveredDirMoveNode_i32 contains more than EAST
 		{
-			moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+			moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 			if (ROBOT_FAIL != moveResult_i32)
 			{
-				previousNode_pst = currentNode_pst;
+				previousNode_pst = f_inputNode_pst;
 				currentNode_pst = moveNode_pst;
-				checkToken(moveResult_i32);
+//				checkToken(moveResult_i32); // Don't check token for already visited Node
 
 				setCoveredDirection(previousNode_pst, WEST);
 				setCoveredDirection(currentNode_pst, EAST);
@@ -144,93 +119,7 @@ int32 checkAndMoveWest(node* f_inputNode_pst)
 	}
 	else // false == searchResult_bl
 	{
-		moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
-		if (ROBOT_FAIL != moveResult_i32)
-		{
-			previousNode_pst = currentNode_pst;
-			checkToken(moveResult_i32);
-			int32 availableDirMoveNode_i32 = Robot_GetIntersections();
-			moveNode_pst = setMazeArrayElement(moveCord_x_i32, moveCord_y_i32, availableDirMoveNode_i32);
-
-			if (NULL != moveNode_pst)
-			{
-				currentNode_pst = moveNode_pst;
-			}
-			else
-			{
-				return CHECK_NOT_OK;
-			}
-			setCoveredDirection(previousNode_pst, WEST);
-			setCoveredDirection(currentNode_pst, EAST);
-
-			return CHECK_OK;
-		}
-		else
-		{
-			return CHECK_NOT_OK;
-		}
-	}
-
-	return ALGO_CONFUSED;
-}
-
-int32 checkAndMoveNorth(node* f_inputNode_pst)
-{
-	coordinates nodeCord_st;
-	node* moveNode_pst = NULL;
-
-	int moveResult_i32 = CHECK_NOT_OK;
-	
-	nodeCord_st = getNodeCoordinates(f_inputNode_pst);
-	directionsFlag uncoveredDirectionsFlag_st = getUncoveredDirectionsFlag(f_inputNode_pst);
-
-	int32 moveCord_x_i32 = nodeCord_st.x_Coordinate_i32;
-	int32 moveCord_y_i32 = nodeCord_st.y_Coordinate_i32 + 1;
-
-	moveNode_pst = searchMazeArray(moveCord_x_i32, moveCord_y_i32);
-
-	if (NULL != moveNode_pst)
-	{
-		int32 unCoveredDirMoveNode_i32 = getUnCoveredDirections(moveNode_pst);
-
-		if (SOUTH == unCoveredDirMoveNode_i32)
-		{
-			setCoveredDirection(f_inputNode_pst, NORTH);
-			setCoveredDirection(moveNode_pst, SOUTH);
-			
-			if (true == uncoveredDirectionsFlag_st.isWestAvailable_bl)
-			{
-				moveResult_i32 = checkAndMoveWest(f_inputNode_pst);
-			}
-			
-			return moveResult_i32;
-
-			// check other remaining direction here and if nothing available, do the below command
-			// consideration No.7: call a specific function in the confused state
-		}
-		else // unCoveredDirMoveNode_i32 contains more than SOUTH
-		{
-			moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
-			if (ROBOT_FAIL != moveResult_i32)
-			{
-				previousNode_pst = f_inputNode_pst;
-				currentNode_pst = moveNode_pst;
-				checkToken(moveResult_i32);
-
-				setCoveredDirection(previousNode_pst, NORTH);
-				setCoveredDirection(currentNode_pst, SOUTH);
-
-				return CHECK_OK;
-			}
-			else
-			{
-				return CHECK_NOT_OK;
-			}
-		}
-	}
-	else // false == searchResult_bl
-	{
-		moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+		moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 		if (ROBOT_FAIL != moveResult_i32)
 		{
 			previousNode_pst = f_inputNode_pst;
@@ -247,6 +136,102 @@ int32 checkAndMoveNorth(node* f_inputNode_pst)
 				return CHECK_NOT_OK;
 			}
 
+			setWestNode(f_inputNode_pst, moveNode_pst);
+			setEastNode(moveNode_pst, f_inputNode_pst);
+
+			setCoveredDirection(previousNode_pst, WEST);
+			setCoveredDirection(currentNode_pst, EAST);
+
+			return CHECK_OK;
+		}
+		else
+		{
+			return CHECK_NOT_OK;
+		}
+	}
+}
+
+int32 checkAndMoveNorth(node* f_inputNode_pst)
+{
+	coordinates nodeCord_st;
+	node* moveNode_pst = NULL;
+
+	int moveResult_i32 = CHECK_NOT_OK;
+
+	nodeCord_st = getNodeCoordinates(f_inputNode_pst);
+	directionsFlag uncoveredDirectionsFlag_st = getUncoveredDirectionsFlag(f_inputNode_pst);
+
+	int32 moveCord_x_i32 = nodeCord_st.x_Coordinate_i32;
+	int32 moveCord_y_i32 = nodeCord_st.y_Coordinate_i32 + 1;
+
+	moveNode_pst = searchMazeArray(moveCord_x_i32, moveCord_y_i32);
+
+	if (NULL != moveNode_pst)
+	{
+		int32 unCoveredDirMoveNode_i32 = getUnCoveredDirections(moveNode_pst);
+
+		setNorthNode(f_inputNode_pst, moveNode_pst);
+		setSouthNode(moveNode_pst, f_inputNode_pst);
+
+		if (SOUTH == unCoveredDirMoveNode_i32)
+		{
+			setCoveredDirection(f_inputNode_pst, NORTH);
+			setCoveredDirection(moveNode_pst, SOUTH);
+
+			if (true == uncoveredDirectionsFlag_st.isWestAvailable_bl)
+			{
+				moveResult_i32 = checkAndMoveWest(f_inputNode_pst);
+			}
+			else
+			{
+				// As per design it should not come here
+				return CHECK_NOT_OK;
+			}
+		}
+		else if (NULLDIRECTION != unCoveredDirMoveNode_i32) // unCoveredDirMoveNode_i32 contains more than SOUTH
+		{
+			moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
+			if (ROBOT_FAIL != moveResult_i32)
+			{
+
+
+				previousNode_pst = f_inputNode_pst;
+				currentNode_pst = moveNode_pst;
+//				checkToken(moveResult_i32); // Don't check token for already visited Node
+
+				setCoveredDirection(previousNode_pst, NORTH);
+				setCoveredDirection(currentNode_pst, SOUTH);
+
+				return CHECK_OK;
+			}
+			else
+			{
+				return CHECK_NOT_OK;
+			}
+		}
+	}
+	else // false == searchResult_bl
+	{
+		moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
+		if (ROBOT_FAIL != moveResult_i32)
+		{
+			previousNode_pst = f_inputNode_pst;
+			checkToken(moveResult_i32);
+			int32 availableDirMoveNode_i32 = Robot_GetIntersections();
+			moveNode_pst = setMazeArrayElement(moveCord_x_i32, moveCord_y_i32, availableDirMoveNode_i32);
+
+			if (NULL != moveNode_pst)
+			{
+				currentNode_pst = moveNode_pst;
+			}
+			else
+			{
+				return CHECK_NOT_OK;
+			}
+
+			setNorthNode(f_inputNode_pst, moveNode_pst);
+			setSouthNode(moveNode_pst, f_inputNode_pst);
+
 			setCoveredDirection(previousNode_pst, NORTH);
 			setCoveredDirection(currentNode_pst, SOUTH);
 
@@ -257,8 +242,6 @@ int32 checkAndMoveNorth(node* f_inputNode_pst)
 			return CHECK_NOT_OK;
 		}
 	}
-
-	return ALGO_CONFUSED;
 }
 
 int32 checkAndMoveEast(node* f_inputNode_pst)
@@ -280,6 +263,9 @@ int32 checkAndMoveEast(node* f_inputNode_pst)
 	{
 		int32 unCoveredDirMoveNode_i32 = getUnCoveredDirections(moveNode_pst);
 
+		setEastNode(f_inputNode_pst, moveNode_pst);
+		setWestNode(moveNode_pst, f_inputNode_pst);
+
 		if (WEST == unCoveredDirMoveNode_i32)
 		{
 			setCoveredDirection(f_inputNode_pst, EAST);
@@ -293,20 +279,20 @@ int32 checkAndMoveEast(node* f_inputNode_pst)
 			{
 				moveResult_i32 = checkAndMoveWest(f_inputNode_pst);
 			}
-
-			return moveResult_i32;
-
-			// check other remaining direction here and if nothing available, do the below command
-			// consideration No.7: call a specific function in the confused state
+			else
+			{
+				// As per design it should not come here
+				return CHECK_NOT_OK;
+			}
 		}
-		else // unCoveredDirMoveNode_i32 contains more than WEST
+		else if (NULLDIRECTION != unCoveredDirMoveNode_i32) // unCoveredDirMoveNode_i32 contains more than WEST
 		{
-			moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+			moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 			if (ROBOT_FAIL != moveResult_i32)
 			{
 				previousNode_pst = f_inputNode_pst;
 				currentNode_pst = moveNode_pst;
-				checkToken(moveResult_i32);
+//				checkToken(moveResult_i32); // Don't check token for already visited Node
 
 				setCoveredDirection(previousNode_pst, EAST);
 				setCoveredDirection(currentNode_pst, WEST);
@@ -321,7 +307,7 @@ int32 checkAndMoveEast(node* f_inputNode_pst)
 	}
 	else // false == searchResult_bl
 	{
-		moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+		moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 		if (ROBOT_FAIL != moveResult_i32)
 		{
 			previousNode_pst = f_inputNode_pst;
@@ -338,6 +324,9 @@ int32 checkAndMoveEast(node* f_inputNode_pst)
 				return CHECK_NOT_OK;
 			}
 
+			setEastNode(f_inputNode_pst, moveNode_pst);
+			setWestNode(moveNode_pst, f_inputNode_pst);
+
 			setCoveredDirection(previousNode_pst, EAST);
 			setCoveredDirection(currentNode_pst, WEST);
 
@@ -348,8 +337,6 @@ int32 checkAndMoveEast(node* f_inputNode_pst)
 			return CHECK_NOT_OK;
 		}
 	}
-
-	return ALGO_CONFUSED;
 }
 
 int32 checkAndMoveSouth(node* f_inputNode_pst)
@@ -371,6 +358,9 @@ int32 checkAndMoveSouth(node* f_inputNode_pst)
 	{
 		int32 unCoveredDirMoveNode_i32 = getUnCoveredDirections(moveNode_pst);
 
+		setSouthNode(f_inputNode_pst, moveNode_pst);
+		setNorthNode(moveNode_pst, f_inputNode_pst);
+
 		if (NORTH == unCoveredDirMoveNode_i32)
 		{
 			setCoveredDirection(f_inputNode_pst, SOUTH);
@@ -388,20 +378,20 @@ int32 checkAndMoveSouth(node* f_inputNode_pst)
 			{
 				moveResult_i32 = checkAndMoveWest(f_inputNode_pst);
 			}
-
-			return moveResult_i32;
-
-			// check other remaining direction here and if nothing available, do the below command
-			// consideration No.7: call a specific function in the confused state
+			else
+			{
+				// As per design it should not come here
+				return CHECK_NOT_OK;
+			}
 		}
-		else // unCoveredDirMoveNode_i32 contains more than NORTH
+		else if (NULLDIRECTION != unCoveredDirMoveNode_i32) // unCoveredDirMoveNode_i32 contains more than NORTH
 		{
-			moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+			moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 			if (ROBOT_FAIL != moveResult_i32)
 			{
 				previousNode_pst = f_inputNode_pst;
 				currentNode_pst = moveNode_pst;
-				checkToken(moveResult_i32);
+//				checkToken(moveResult_i32); // Don't check token for already visited Node
 
 				setCoveredDirection(previousNode_pst, SOUTH);
 				setCoveredDirection(currentNode_pst, NORTH);
@@ -416,12 +406,13 @@ int32 checkAndMoveSouth(node* f_inputNode_pst)
 	}
 	else // Unsuccessful search
 	{
-		moveResult_i32 = robotAlgoMove(moveCord_x_i32, moveCord_y_i32);
+		moveResult_i32 = Robot_Move(moveCord_x_i32, moveCord_y_i32);
 		if (ROBOT_FAIL != moveResult_i32)
 		{
 			previousNode_pst = f_inputNode_pst;
 			checkToken(moveResult_i32);
 			int32 availableDirMoveNode_i32 = Robot_GetIntersections();
+
 			moveNode_pst = setMazeArrayElement(moveCord_x_i32, moveCord_y_i32, availableDirMoveNode_i32);
 
 			if (NULL != moveNode_pst)
@@ -433,6 +424,9 @@ int32 checkAndMoveSouth(node* f_inputNode_pst)
 				return CHECK_NOT_OK;
 			}
 
+			setSouthNode(f_inputNode_pst, moveNode_pst);
+			setNorthNode(moveNode_pst, f_inputNode_pst);
+
 			setCoveredDirection(previousNode_pst, SOUTH);
 			setCoveredDirection(currentNode_pst, NORTH);
 
@@ -443,8 +437,6 @@ int32 checkAndMoveSouth(node* f_inputNode_pst)
 			return CHECK_NOT_OK;
 		}
 	}
-
-	return ALGO_CONFUSED;
 }
 
 void reviewWest(node* f_inputNode_pst)
@@ -461,8 +453,8 @@ void reviewWest(node* f_inputNode_pst)
 
 	if (NULL != westNode_pst)
 	{
-		f_inputNode_pst->east_pst = westNode_pst;
-		westNode_pst->east_pst = f_inputNode_pst;
+		setWestNode(f_inputNode_pst, westNode_pst);
+		setEastNode(westNode_pst, f_inputNode_pst);
 
 		int32 unCoveredDirWestNode_i32 = getUnCoveredDirections(westNode_pst);
 		if (EAST == unCoveredDirWestNode_i32)
@@ -497,8 +489,8 @@ void reviewNorth(node* f_inputNode_pst)
 
 	if (NULL != northNode_pst)
 	{
-		f_inputNode_pst->north_pst = northNode_pst;
-		northNode_pst->south_pst = f_inputNode_pst;
+		setNorthNode(f_inputNode_pst, northNode_pst);
+		setSouthNode(northNode_pst, f_inputNode_pst);
 
 		int32 unCoveredDirNorthNode_i32 = getUnCoveredDirections(northNode_pst);
 		if (SOUTH == unCoveredDirNorthNode_i32)
@@ -533,8 +525,8 @@ void reviewEast(node* f_inputNode_pst)
 
 	if (NULL != eastNode_pst)
 	{
-		f_inputNode_pst->east_pst = eastNode_pst;
-		eastNode_pst->west_pst = f_inputNode_pst;
+		setEastNode(f_inputNode_pst, eastNode_pst);
+		setWestNode(eastNode_pst, f_inputNode_pst);
 
 		int32 unCoveredDirEastNode_i32 = getUnCoveredDirections(eastNode_pst);
 		if (WEST == unCoveredDirEastNode_i32)
@@ -569,8 +561,8 @@ void reviewSouth(node* f_inputNode_pst)
 
 	if (NULL != southNode_pst)
 	{
-		f_inputNode_pst->south_pst = southNode_pst;
-		southNode_pst->north_pst = f_inputNode_pst;
+		setSouthNode(f_inputNode_pst, southNode_pst);
+		setNorthNode(southNode_pst, f_inputNode_pst);
 
 		int32 unCoveredDirSouthNode_i32 = getUnCoveredDirections(southNode_pst);
 		if (NORTH == unCoveredDirSouthNode_i32)
@@ -618,6 +610,7 @@ void reviewNeighbours(node* f_inputNode_pst)
 	}
 }
 
+
 int32 startRobotAlgo()
 {
 	int32 moveResult_i32 = 0;
@@ -629,13 +622,20 @@ int32 startRobotAlgo()
 //	node* moveNode_pst = NULL;
 //	bool searchResult_bl = false;
 
-	while( (!isMazeExplored_bl || !isTokensCollected_bl) && (100 > timeout_ui32) )
+	while((!isMazeExplored_bl) && (!isTokensCollected_bl) && (100 > timeout_ui32))
 	{
 		if(NULL != currentNode_pst)
 		{
-			moveResult_i32 = 0;
+			moveResult_i32 = ALGO_FAIL;
 
 			timeout_ui32 = 0;
+
+			node* movedIfDeadEndNode_pst = checkAndMoveFromDeadEnd(currentNode_pst, previousNode_pst);
+
+			if (NULL != movedIfDeadEndNode_pst)
+			{
+				currentNode_pst = movedIfDeadEndNode_pst;
+			}
 
 			reviewNeighbours(currentNode_pst);
 
@@ -657,15 +657,48 @@ int32 startRobotAlgo()
 			{
 				moveResult_i32 = checkAndMoveWest(currentNode_pst);
 			}
-
-			if (ALGO_CONFUSED == moveResult_i32)
+			else
 			{
-				return ALGO_CONFUSED;
+				node* lastUncoveredNode_pst = NULL;
+
+				// Confused state don't know where to go, check the last uncovered node
+				lastUncoveredNode_pst = getLastUncoveredNode();
+
+				// If nothing available go back to origin, HURRAY! we explored the whole Maze!
+				if (NULL == lastUncoveredNode_pst)
+				{
+					// go back to origin via A* Path
+					// return origin Node ptr
+					// but check out the cases for token!!
+					neighbourList* AStarPathList_pst = aStarPathFinder(currentNode_pst, originNode_pst);
+					moveResult_i32 = processAStarPath(AStarPathList_pst);
+					destroyNeighbourList(AStarPathList_pst);
+					currentNode_pst = originNode_pst;
+					isMazeExplored_bl = true;
+				}
+				else
+				{
+					// go  to that node via a shortest path
+					// needed a A* Algorithm
+					neighbourList* AStarPathList_pst = aStarPathFinder(currentNode_pst, lastUncoveredNode_pst);
+					moveResult_i32 = processAStarPath(AStarPathList_pst);
+					destroyNeighbourList(AStarPathList_pst);
+					currentNode_pst = lastUncoveredNode_pst;
+				}
 			}
 
-			if (CHECK_OK != moveResult_i32)
+			if (ALGO_FAIL == moveResult_i32)
 			{
 				return ALGO_FAIL;
+			}
+
+			if (true == isTokensCollected_bl)
+			{
+				neighbourList* AStarPathList_pst = aStarPathFinder(currentNode_pst, originNode_pst);
+				processAStarPath(AStarPathList_pst);
+				destroyNeighbourList(AStarPathList_pst);
+				currentNode_pst = originNode_pst;
+				return ALGO_TOKENS_COLLECTED;
 			}
 		}
 		else
