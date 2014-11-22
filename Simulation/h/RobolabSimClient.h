@@ -9,7 +9,7 @@
 #define ROBOLABSIMCLIENT_H_
 
 #include "types.h"
-#include "RobotProxy.h"
+#include "Algo.h"
 #include "MazeArray.h"
 #include "node.h"
 

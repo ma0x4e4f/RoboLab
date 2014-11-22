@@ -25,4 +25,6 @@ node* setMazeArrayElement(int32 f_xCord_i32, int32 f_yCord_i32, int32 f_availabl
 
 node* searchMazeArray(int32 f_xCord_i32, int32 f_yCord_i32);
 
+node* getLastUncoveredNode();
+
 #endif /* MAZEARRAY_H_ */

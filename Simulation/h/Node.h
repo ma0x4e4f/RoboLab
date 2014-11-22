@@ -9,8 +9,8 @@
 #ifndef NODE_H_
 #define NODE_H_
 
-#include "Configuration.h"
 #include "types.h"
+#include <stdlib.h>
 
 #define NULLDIRECTION 0x00
 
@@ -41,9 +41,19 @@ typedef struct node_st
 
 } node;
 
+typedef struct
+{
+	bool isNorthAvailable_bl;
+	bool isSouthAvailable_bl;
+	bool isWestAvailable_bl;
+	bool isEastAvailable_bl;
+}directionsFlag;
+
+directionsFlag getAvailableDirectionsFlag(node* f_inputNode_pst);
+
+directionsFlag getUncoveredDirectionsFlag(node* f_inputNode_pst);
+
 void initNode(node* f_inputNode_pst);
-
-
 
 bool setNodeCoordinates(node* f_inputNode_pst, int32 f_xCord_i32, int32 f_yCord_i32);
 
@@ -74,6 +84,43 @@ node* getEastNode(node* f_inputNode_pst);
 void setWestNode(node* f_inputNode_pst, node* f_neighbourNode_pst);
 
 node* getWestNode(node* f_inputNode_pst);
+
+typedef struct neighbourListNode_st
+{
+	node* neighbourNode_pst;
+	struct neighbourListNode_st* next;
+	struct neighbourListNode_st* prev;
+
+} neighbourListNode;
+
+typedef struct neighbourList_st
+{
+	neighbourListNode* head;
+	neighbourListNode* tail;
+	int32 listSize;
+
+} neighbourList;
+
+neighbourListNode* createNeighbourListNode();
+
+neighbourList* createNeghbourList();
+
+bool isNeighbourListEmpty(neighbourList* f_neighbourList_pst);
+
+bool addToFrontNeighbourList(neighbourList* f_neighbourList_pst, node* f_inputNode_pst);
+
+bool addToEndNeighbourList(neighbourList* f_neighbourList_pst, node* f_inputNode_pst);
+
+void reomveNeighbourListEnd(neighbourList* f_neighbourList_pst);
+
+void deleteNeighbourList(neighbourList* f_neighbourList_pst);
+
+void destroyNeighbourList(neighbourList* f_neighbourList_pst);
+
+
+// Neighbour Functions
+neighbourList* getNeighbourList(node* f_inputNode_pst);
+
 //bool isNodeOrigin (node* f_inputNode_p);
 
 #endif /* NODE_H_ */
