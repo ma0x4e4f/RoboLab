@@ -1,5 +1,8 @@
 #include "../h/main.h"
 
+#include "../h/algo/Node.h"
+#include "../h/algo/Algo.h"
+
 /// DO NOT DELETE THIS METHOD
 /// It is called every 1ms and e.g. can be used for implementing a
 /// real time counter / clock.
@@ -12,64 +15,131 @@ void ecrobot_device_initialize(void) {
 void ecrobot_device_terminate(void) {
 }
 
-void hello_world() {
-	ecrobot_status_monitor("Hello, World!");
+int getCurrentOrientation()
+{
+	return curentOrientation;
+}
+
+void setCurrentOrientation(int orientation)
+{
+	curentOrientation = orientation;
+}
+
+int initRobot()
+{
+	// CAUTION: Robot has to be kept on Black in order to continue else the program will not work!!
+
+	int originMoveResult_i32 = 0;
+
+	ecrobot_set_light_sensor_active(NXT_PORT_S2);
+
+	calibration(); // Do Calibration to find correct threshold value
+
+	setCurrentOrientation(NORTH);
+
+	originMoveResult_i32 = movenodetonode(); // Moving Robot to the Origin point and start the Algorithm
+
+	return originMoveResult_i32;
+}
+
+void endRobot(int f_inputResult_i32)
+{
+	node* l_currentNode_pst = getCurretnNode();
+
+	node* l_originNode_pst = getOriginNode();
+
+	int l_moveResult_i32;
+
+	if(l_originNode_pst == l_currentNode_pst)
+	{
+		l_moveResult_i32 = endHandler();
+	}
 
 }
 
-TASK(OSEK_Main_Task) {
+TASK(OSEK_Main_Task)
+{
+//	for(int i = 0; i < 8; i++)
+//	{
+//		turnAndScan(45, 45, FALSE, FALSE);
+//	}
 
-	int n = 0;
-
-//	while (n < 5) {
-//			nxt_motor_set_speed(NXT_PORT_A,75,0);
-//			systick_wait_ms(2000);
-//			nxt_motor_set_speed(NXT_PORT_A,0,1);
-
-//			hello_world();
-
-		int RN = 50;
-
-		int currentRev = ecrobot_get_motor_rev(NXT_PORT_B);
-		int oldRev = ecrobot_get_motor_rev(NXT_PORT_B);
-
-
-//		nxt_motor_set_count(NXT_PORT_B, 180);
-//		nxt_motor_set_count(NXT_PORT_C, 90);
-
-		nxt_motor_set_speed(NXT_PORT_B, RN, 1); 			/* Set motor speed for B and C to RN */
-		nxt_motor_set_speed(NXT_PORT_C, RN, 1);
-
-
-		/* 500msec wait */
-//		systick_wait_ms(5000);
-
-		while(n < 180)
-		{
-			currentRev = ecrobot_get_motor_rev(NXT_PORT_B);
-			n = currentRev-oldRev;
-		}
-
-		oldRev = currentRev;
-
-		nxt_motor_set_speed(NXT_PORT_B, 0, 1);
-		nxt_motor_set_speed(NXT_PORT_C, 0, 1);
-
-//		systick_wait_ms(2000);
+//	while(1)
+//	{
+//		turnAndScan(90,90,FALSE, CLOCKWISE);
+//		turnAndScan(180,180,FALSE, ANTICLOCKWISE);
+//		turnAndScan(90,90,FALSE, CLOCKWISE);
 //
-//		nxt_motor_set_speed(NXT_PORT_B, 50, 1);
-//		nxt_motor_set_speed(NXT_PORT_C, -50, 1);
+////		systick_wait_ms(2000);
+//	}
 
-		systick_wait_ms(15000);
+	int originMoveResult_i32 = initRobot();
 
-		nxt_motor_set_speed(NXT_PORT_B, 0, 1);
-		nxt_motor_set_speed(NXT_PORT_C, 0, 1);
+	int startRobotAlgoResult_i32 = ALGO_FAIL;
+
+	BOOL initResult_bl = initRobotAlgo(originMoveResult_i32);
+
+	if(TRUE == initResult_bl)
+	{
+		startRobotAlgoResult_i32 = startRobotAlgo();
+	}
+	else
+	{
+		ecrobot_status_monitor("Init Error");
+	}
+
+	if(ALGO_FAIL != startRobotAlgoResult_i32 && ALGO_TIMEOUT != startRobotAlgoResult_i32)
+	{
+		endRobot(startRobotAlgoResult_i32);
+	}
+	else
+	{
+		node* l_currentNode_pst = getCurretnNode();
+		ecrobot_status_monitor("Algo Error!");
+		systick_wait_ms(20000);
+		ecrobot_debug1(l_currentNode_pst->xy_st.x_Coordinate_i32, l_currentNode_pst->xy_st.y_Coordinate_i32,
+				l_currentNode_pst->availableDirections_i32);
+	}
 
 
-//		n++;
 
+
+
+
+
+
+
+
+
+
+
+
+//	while (1) {
+//		     ecrobot_set_light_sensor_active(NXT_PORT_S2);
+//		     nxt_motor_set_count(NXT_PORT_B, 0);
+//		     nxt_motor_set_count(NXT_PORT_C, 0);
+//
+//     	     calibration();
+//
+//     	    threshold = getThreshold();
+
+//     	    forward(135,135,30,30);
+
+//     	     threshold=550;
+
+//		     movenodetonode(threshold);//725 count for 29cm,movement untill threshold value chnages//
+//		     stop();
+
+//		     movingintersection(100,100,-20,-20);
+//		     int validDir = Robot_GetIntersections();
+//         	 north=straight(threshold);  // following functions are to check intersections are present or not //
+//		  	 east=turneast(threshold);
+//		  	 south=turnsouth(threshold);
+//		  	 west=turnwest(threshold);
+//		  	 validdirections=oring(north,south,east,west); // To know which directions are present //
+//             robotmove (int x,int y,int u,int v, float threshold);
 
 //	}
 
-	TerminateTask();
+    TerminateTask();
 }

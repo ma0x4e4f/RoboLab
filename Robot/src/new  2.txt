@@ -1,0 +1,1 @@
+Make the Light sensor to move

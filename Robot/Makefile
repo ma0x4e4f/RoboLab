@@ -1,7 +1,7 @@
-	# Target specific macros
+# Target specific macros
 TARGET = main
 TARGET_SOURCES = $(addprefix src/, \
-	main.c )
+	main.c types.c directions.c lightsensor.c movements.c RobotHandler.c algo/Algo.c algo/AStarNode.c algo/AStarPathFinder.c algo/DeadEndHandler.c algo/MazeArray.c algo/Node.c)
 TOPPERS_OSEK_OIL_SOURCE = ./main.oil
 
 # Don't modify below part
